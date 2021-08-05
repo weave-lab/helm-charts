@@ -3,14 +3,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "temporal.componentname" (list . "frontend") }}
+  {{- include "temporal.namespace" $ | indent 2 }}
   labels:
-    app.kubernetes.io/name: {{ include "temporal.name" . }}
-    helm.sh/chart: {{ include "temporal.chart" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    {{- include "temporal.labels" $ | nindent 4 }}
     app.kubernetes.io/component: frontend
-    app.kubernetes.io/part-of: {{ .Chart.Name }}
   {{- if .Values.server.frontend.service.annotations }}
   annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.server.frontend.service.annotations "context" $) | nindent 4 }}
   {{- end }}
@@ -25,8 +21,7 @@ spec:
       nodePort: {{ .Values.server.frontend.service.nodePort }}
       {{- end }}
   selector:
-    app.kubernetes.io/name: {{ include "temporal.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "temporal.selectorLabels" $ | nindent 4 }}
     app.kubernetes.io/component: frontend
 
 ---
@@ -36,14 +31,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "temporal.componentname" (list $ (printf "%s-headless" $service)) }}
+  {{- include "temporal.namespace" $ | indent 2 }}
   labels:
-    app.kubernetes.io/name: {{ include "temporal.name" $ }}
-    helm.sh/chart: {{ include "temporal.chart" $ }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
-    app.kubernetes.io/version: {{ $.Chart.AppVersion | replace "+" "_" }}
+    {{- include "temporal.labels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ $service }}
-    app.kubernetes.io/part-of: {{ $.Chart.Name }}
     app.kubernetes.io/headless: 'true'
     prometheus.io/job: {{ $.Chart.Name }}-{{ $service }}
     prometheus.io/scrape: 'true'
@@ -70,8 +61,7 @@ spec:
       protocol: TCP
       name: metrics
   selector:
-    app.kubernetes.io/name: {{ include "temporal.name" $ }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- include "temporal.selectorLabels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ $service }}
 
 ---

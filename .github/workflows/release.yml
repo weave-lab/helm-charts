@@ -26,6 +26,27 @@ jobs:
         with:
           version: v3.4.0
 
+      - name: Add helm depdenencies
+        run: |
+          helm repo add cassandra https://charts.helm.sh/incubator
+          helm repo add prometheus https://prometheus-community.github.io/helm-charts
+          helm repo add elasticsearch https://helm.elastic.co
+          helm repo add grafana https://grafana.github.io/helm-charts
+
+      - name: Move Chart files to charts/temporal/
+        run: |
+          # Move chart files to charts/temporal so the charts releaser can build
+          # properly. This keeps the fork and the original repo as in sync as
+          # possible. However, it does have the downside of the release action
+          # running on every push to the workflow branches, but it will fail
+          # if there is already a release with the same version.
+
+          mkdir -p charts/temporal
+          sed -i -e '/\/charts/d' ./.gitignore
+          git ls-tree --name-only HEAD | \
+            egrep -v '(.github|.gitignore)' | \
+            xargs -I{} cp -R {} charts/temporal
+          git add charts/temporal
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.2.1
         env:
