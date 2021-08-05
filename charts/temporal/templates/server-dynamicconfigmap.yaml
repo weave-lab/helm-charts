@@ -1,0 +1,14 @@
+{{- if $.Values.server.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "temporal.fullname" . }}-dynamic-config"
+  {{- include "temporal.namespace" $ | indent 2 }}
+  labels:
+    {{- include "temporal.labels" $ | nindent 4 }}
+data:
+  dynamic_config.yaml: |-
+  {{- if $.Values.server.dynamicConfig }}
+    {{- toYaml .Values.server.dynamicConfig | nindent 4 }}
+  {{- end }}
+{{- end }}
