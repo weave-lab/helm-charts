@@ -3,14 +3,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "temporal.componentname" (list . "web") }}
+  {{- include "temporal.namespace" $ | indent 2 }}
   labels:
-    app.kubernetes.io/name: {{ include "temporal.name" . }}
-    helm.sh/chart: {{ include "temporal.chart" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    {{- include "temporal.labels" $ | nindent 4 }}
     app.kubernetes.io/component: web
-    app.kubernetes.io/part-of: {{ .Chart.Name }}
 {{- with .Values.web.service.annotations }}
   annotations:
 {{ toYaml . | indent 4 }}
@@ -29,7 +25,6 @@ spec:
       nodePort: {{ .Values.web.service.nodePort }}
       {{- end }}
   selector:
-    app.kubernetes.io/name: {{ include "temporal.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    {{- include "temporal.selectorLabels" $ | nindent 4 }}
     app.kubernetes.io/component: web
   {{- end }}
