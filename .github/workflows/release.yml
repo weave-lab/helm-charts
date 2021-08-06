@@ -33,6 +33,13 @@ jobs:
           helm repo add elasticsearch https://helm.elastic.co
           helm repo add grafana https://grafana.github.io/helm-charts
 
+      - name: Move Chart files to charts/temporal/
+        run: |
+          mkdir -p charts/temporal
+          git ls-tree --name-only HEAD | \
+            egrep -v '(.github|.gitignore)' | \
+            xargs -I{} cp -R {} charts/temporal
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.2.1
         env:
