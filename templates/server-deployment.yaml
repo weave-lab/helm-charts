@@ -120,6 +120,9 @@ spec:
         {{- end }}
       securityContext:
         {{- toYaml $.Values.server.securityContext | nindent 8 }}
+      {{- with (include "temporal.serviceAccountName" $) }}
+      serviceAccountName: {{ . }}
+      {{- end }}
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
       {{- toYaml . | nindent 8 }}

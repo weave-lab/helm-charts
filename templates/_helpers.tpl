@@ -331,7 +331,7 @@ Sets the persistence store password environment variables.
       key: {{ include "temporal.persistence.secretKey" (list $ "default") }}
 {{- end }}
 - name: TEMPORAL_VISIBILITY_STORE_PASSWORD
-{{- with .Values.server.config.persistence.default.envOverrides.visibilityStorePassword }}
+{{- with .Values.server.config.persistence.visibility.envOverrides.storePassword }}
 {{- toYaml . | nindent 2 }}
 {{- else }}
   valueFrom:
@@ -398,12 +398,12 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "temporal.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create }}
-{{- default (include "temporal.fullname" .) .Values.serviceAccount.name }}
-{{- else }}
+{{- if .Values.serviceAccount.create -}}
+{{- default (include "temporal.fullname" .) .Values.serviceAccount.name -}}
+{{- else -}}
 {{- default "default" .Values.serviceAccount.name }}
-{{- end }}
-{{- end }}
+{{- end -}}
+{{- end -}}
 
 {{/*
 Namespace labels

@@ -132,6 +132,18 @@ server:
       visibility:
         driver: "cassandra"
 
+        # Override store password environment variable definition.
+        envOverrides:
+          storePassword: { }
+          visibilityStorePassword: { }
+        # storePassword:
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: "secret-key-name"
+        #       key: "secretKey"
+        # visibilityStorePassword:
+        #   value: vault:secretKey#secretKeyName#1
+
         cassandra:
           hosts: []
           # port: 9042

@@ -40,6 +40,9 @@ spec:
               protocol: TCP
           resources:
             {{- toYaml .Values.web.resources | nindent 12 }}
+      {{- with (include "temporal.serviceAccountName" $) }}
+      serviceAccountName: {{ . }}
+      {{- end }}
       {{- with .Values.web.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
