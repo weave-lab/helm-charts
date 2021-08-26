@@ -11,6 +11,9 @@ metadata:
     app.kubernetes.io/component: {{ $service }}
 spec:
   replicas: {{ default $.Values.server.replicaCount $serviceValues.replicaCount }}
+  {{- with $.Values.server.revisionHistoryLimit }}
+  revisionHistoryLimit: {{ . }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "temporal.selectorLabels" $ | nindent 6 }}
