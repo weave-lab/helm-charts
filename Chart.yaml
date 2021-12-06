@@ -17,6 +17,7 @@ maintainers:
 
 sources:
   - https://github.com/temporalio/temporal
+  - https://github.com/weave-lab/temporal-helm-charts
 
 dependencies:
   - name: cassandra
@@ -49,7 +50,7 @@ type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
-version: 0.11.3
+version: 1.12.0-wcr.7
 
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application.

@@ -318,6 +318,30 @@ Source: https://stackoverflow.com/a/52024583/3027614
 {{- end -}}
 
 {{/*
+Sets the persistence store password environment variables.
+*/}}
+{{- define "temporal.persistence.storePasswordsEnv" -}}
+- name: TEMPORAL_STORE_PASSWORD
+{{- with .Values.server.config.persistence.default.envOverrides.storePassword }}
+{{- toYaml . | nindent 2 }}
+{{- else }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "temporal.persistence.secretName" (list $ "default") }}
+      key: {{ include "temporal.persistence.secretKey" (list $ "default") }}
+{{- end }}
+- name: TEMPORAL_VISIBILITY_STORE_PASSWORD
+{{- with .Values.server.config.persistence.visibility.envOverrides.storePassword }}
+{{- toYaml . | nindent 2 }}
+{{- else }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "temporal.persistence.secretName" (list $ "visibility") }}
+      key: {{ include "temporal.persistence.secretKey" (list $ "visibility") }}
+{{- end }}
+{{- end -}}
+
+{{/*
 All Cassandra hosts.
 */}}
 {{- define "cassandra.hosts" -}}
@@ -347,4 +371,63 @@ Usage:
     {{- else }}
         {{- tpl (.value | toYaml) .context }}
     {{- end }}
+{{- end -}}
+
+{{/*
+Common labels
+*/}}
+{{- define "temporal.labels" -}}
+helm.sh/chart: {{ include "temporal.chart" . }}
+{{ include "temporal.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: {{ $.Chart.Name }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "temporal.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "temporal.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "temporal.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create -}}
+{{- default (include "temporal.fullname" .) .Values.serviceAccount.name -}}
+{{- else -}}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Namespace labels
+*/}}
+{{- define "temporal.namespaceLabels" -}}
+{{- include "temporal.labels" . }}
+{{ toYaml .Values.namespace.labels }}
+{{- end }}
+
+{{/*
+Include explicit namespace. Maybe required for certain deployment processes.
+*/}}
+{{- define "temporal.namespace" -}}
+{{- if .Values.namespace.include }}
+namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- end }}
+
+{{/*
+Includes required and additional environment variables for the server containers.
+*/}}
+{{- define "temporal.server.env" -}}
+{{- include "temporal.persistence.storePasswordsEnv" . }}
+{{- with .Values.server.additionalEnv }}
+{{ toYaml . }}
+{{- end }}
 {{- end -}}
