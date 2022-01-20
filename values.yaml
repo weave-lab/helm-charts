@@ -66,14 +66,14 @@ server:
   additionalVolumeMounts: []
   sidecarContainers: []
   securityContext: {}
+    # fsGroup: 2000
+  podSecurityContext: {}
     # capabilities:
     #   drop:
     #   - ALL
     # readOnlyRootFilesystem: true
     # runAsNonRoot: true
     # runAsUser: 1000
-  podSecurityContext: {}
-    # fsGroup: 2000
   additionalEnv: []
   # - name: TEMPORAL_DB_USERNAME
   #   value: vault:db#user#1
@@ -326,6 +326,16 @@ web:
   tolerations: []
 
   affinity: {}
+
+  podSecurityContext:
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+  securityContext:
+    # fsGroup: 2000
 
 schema:
   setup:

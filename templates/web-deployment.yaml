@@ -40,6 +40,10 @@ spec:
               protocol: TCP
           resources:
             {{- toYaml .Values.web.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml $.Values.web.podSecurityContext | nindent 12 }}
+      securityContext:
+        {{- toYaml $.Values.web.securityContext | nindent 8 }}
       {{- with (include "temporal.serviceAccountName" $) }}
       serviceAccountName: {{ . }}
       {{- end }}
