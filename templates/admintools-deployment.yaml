@@ -1,4 +1,4 @@
-{{- if .Values.admintools.enabled -}}
+{{- if $.Values.admintools.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,6 +19,7 @@ spec:
         {{- include "temporal.labels" $ | nindent 8 }}
         app.kubernetes.io/component: admintools
     spec:
+      {{ include "temporal.serviceAccount" . }}
       containers:
         - name: admin-tools
           image: "{{ .Values.admintools.image.repository }}:{{ .Values.admintools.image.tag }}"
@@ -29,7 +30,7 @@ spec:
               protocol: TCP
           env:
             - name: TEMPORAL_CLI_ADDRESS
-              value: {{ .Release.Name }}-frontend:{{ include "temporal.frontend.grpcPort" . }}
+              value: {{ include "temporal.fullname" . }}-frontend:{{ include "temporal.frontend.grpcPort" . }}
           livenessProbe:
               exec:
                 command:
@@ -37,9 +38,6 @@ spec:
                 - /
               initialDelaySeconds: 5
               periodSeconds: 5
-      {{- with (include "temporal.serviceAccountName" $) }}
-      serviceAccountName: {{ . }}
-      {{- end }}
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}

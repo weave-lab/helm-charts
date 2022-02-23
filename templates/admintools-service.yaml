@@ -1,4 +1,4 @@
-{{- if .Values.admintools.enabled }}
+{{- if $.Values.admintools.enabled }}
 apiVersion: v1
 kind: Service
 metadata:

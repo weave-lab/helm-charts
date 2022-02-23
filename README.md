@@ -5,6 +5,8 @@ Temporal is a distributed, scalable, durable, and highly available orchestration
 
 This repo contains a basic V3 [Helm](https://helm.sh) chart that deploys Temporal to a Kubernetes cluster. The dependencies that are bundled with this solution by default offer an easy way to experiment with Temporal software. This Helm chart can also be used to install just the Temporal server, configured to connect to dependencies (such as a Cassandra, MySQL, or PostgreSQL database) that you may already have available in your environment.
 
+**We do not recommend using Helm for managing Temporal deployments in production**. Rather, we recommend it for templating/generating manifests for Temporal's internal services only. [See our recent discussion on this topic](https://docs.temporal.io/blog/temporal-and-kubernetes/).
+
 This Helm Chart code is tested by a dedicated test pipeline. It is also used extensively by other Temporal pipelines for testing various aspects of Temporal systems. Our test pipeline currently uses Helm 3.1.1.
 
 # Install Temporal service on a Kubernetes cluster
@@ -92,12 +94,11 @@ Other components (Prometheus, Grafana) can be omitted from the installation by s
     temporaltest . --timeout 900s
 ```
 
-
 ### Install with sidecar containers
 
-You may need to provide your own sidecar containers.
+You may need to provide your own sidecar containers. 
 
-To do so, you may look at the example for Google's `cloud sql proxy` in the `values/values.cloudsqlproxy.yaml` and pass that file to `helm install`.
+To do so, you may look at the example for Google's `cloud sql proxy` in the `values/values.cloudsqlproxy.yaml` and pass that file to `helm install`. 
 
 Example:
 
@@ -250,6 +251,7 @@ The example below demonstrates a few things:
 1. How to set values via the command line rather than the environment.
 2. How to configure a database (shows Cassandra, but MySQL works the same way)
 3. How to enable TLS for the database connection.
+4. How to enable Auth for the Web UI
 
 ```bash
 helm install temporaltest \
@@ -443,6 +445,9 @@ $ kubectl apply -f dynamicconfigmap.yaml
 You can use helm upgrade with the "--dry-run" option to generate the content for the dynamicconfigmap.yaml.
 
 The dynamic-config ConfigMap is referenced as a mounted volume within the Temporal Containers, so any applied change will be automatically picked up by all pods within a few minutes without the need for pod recycling. See k8S documentation (https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#mounted-configmaps-are-updated-automatically) for more details on how this works.
+
+### Updating Temporal Web Config
+the config file `server/config.yml` for the temporal web ui is referenced as a mounted volume within the Temporal Web UI Container and can be populated by inserting values in the `web.config` section in the `values.yml` for possible config check (https://github.com/temporalio/web#configuring-authentication-optional)
 
 ## Uninstalling
 

@@ -32,6 +32,22 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
+Create the name of the service account
+*/}}
+{{- define "temporal.serviceAccountName" -}}
+{{ default (include "temporal.fullname" .) .Values.serviceAccount.name }}
+{{- end -}}
+
+{{/*
+Define the service account as needed
+*/}}
+{{- define "temporal.serviceAccount" -}}
+{{- if .Values.serviceAccount.create -}}
+serviceAccountName: {{ include "temporal.serviceAccountName" . }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Create a default fully qualified component name from the full app name and a component name.
 We truncate the full name at 63 - 1 (last dash) - len(component name) chars because some Kubernetes name fields are limited to this (by the DNS naming spec)
 and we want to make sure that the component is included in the name.
@@ -393,17 +409,6 @@ Selector labels
 app.kubernetes.io/name: {{ include "temporal.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
-
-{{/*
-Create the name of the service account to use
-*/}}
-{{- define "temporal.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create -}}
-{{- default (include "temporal.fullname" .) .Values.serviceAccount.name -}}
-{{- else -}}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end -}}
-{{- end -}}
 
 {{/*
 Namespace labels

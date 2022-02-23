@@ -23,6 +23,11 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      {{ include "temporal.serviceAccount" . }}
+      volumes:
+        - name: {{ .Chart.Name }}-web-config
+          configMap:
+            name: {{ include "temporal.componentname" (list . "web") }}-config
       containers:
         - name: {{ .Chart.Name }}-web
           image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
@@ -34,6 +39,10 @@ spec:
             - name: TEMPORAL_PERMIT_WRITE_API
               value: "true"
             {{- end }}
+          volumeMounts:
+            - name: {{ .Chart.Name }}-web-config
+              mountPath: /usr/app/server/config.yml
+              subPath: config.yml
           ports:
             - name: http
               containerPort: 8088
@@ -44,19 +53,16 @@ spec:
             {{- toYaml $.Values.web.podSecurityContext | nindent 12 }}
       securityContext:
         {{- toYaml $.Values.web.securityContext | nindent 8 }}
-      {{- with (include "temporal.serviceAccountName" $) }}
-      serviceAccountName: {{ . }}
-      {{- end }}
       {{- with .Values.web.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     {{- with .Values.web.affinity }}
-    affinity:
+      affinity:
       {{- toYaml . | nindent 8 }}
     {{- end }}
     {{- with .Values.web.tolerations }}
-    tolerations:
+      tolerations:
       {{- toYaml . | nindent 8 }}
     {{- end }}
   {{- end }}
