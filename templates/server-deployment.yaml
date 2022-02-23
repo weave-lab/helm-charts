@@ -127,8 +127,6 @@ spec:
         {{- if $.Values.server.sidecarContainers }}
         {{- toYaml $.Values.server.sidecarContainers | nindent 8 }}
         {{- end }}
-      securityContext:
-        {{- toYaml $.Values.server.securityContext | nindent 8 }}
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
       {{- toYaml . | nindent 8 }}

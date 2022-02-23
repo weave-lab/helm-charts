@@ -80,8 +80,6 @@ server:
   affinity: {}
   additionalVolumes: []
   additionalVolumeMounts: []
-  securityContext: {}
-    # fsGroup: 2000
   podSecurityContext: {}
     # capabilities:
     #   drop:
