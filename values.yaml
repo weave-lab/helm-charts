@@ -5,11 +5,23 @@ fullnameOverride: ""
 # (eg. disable helm hook delete policy)
 debug: false
 
+# Custom Service account management
+serviceAccount:
+  # Whether to create service account or not
+  create: false
+
+  # Name of the service account, default: temporal.fullname
+  name:
+
+  # extraAnnotations would let users add additional annotations
+  extraAnnotations:
+
 server:
   enabled: true
+  sidecarContainers:
   image:
     repository: temporalio/server
-    tag: 1.11.2
+    tag: 1.15.0
     pullPolicy: IfNotPresent
 
   # Global default settings (can be overridden per service)
@@ -25,6 +37,10 @@ server:
     serviceMonitor:
       enabled: false
       interval: 30s
+      # Set additional lables to all the ServiceMonitor resources
+      additionalLabels: {}
+      #  label1: value1
+      #  label2: value2
       # Set Prometheus metric_relabel_configs via ServiceMonitor
       # Use metricRelabelings to adjust metric and label names as needed
       metricRelabelings: []
@@ -85,6 +101,9 @@ server:
     numHistoryShards: 512
 
     persistence:
+      defaultStore: default
+      additionalStores: {}
+
       default:
         driver: "cassandra"
 
@@ -252,13 +271,16 @@ admintools:
   enabled: true
   image:
     repository: temporalio/admin-tools
-    tag: 1.11.2
+    tag: 1.15.0
     pullPolicy: IfNotPresent
 
   service:
     type: ClusterIP
     port: 22
     annotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -276,6 +298,14 @@ namespace:
 
 web:
   enabled: true
+  config:
+    # server/config.yml file content
+    auth:
+      enabled: false
+    routing:
+      default_to_namespace: # internal use only
+      issue_report_link: https://github.com/temporalio/web/issues/new/choose # set this field if you need to direct people to internal support forums
+
 
   replicaCount: 1
 
@@ -283,10 +313,12 @@ web:
 
   image:
     repository: temporalio/web
-    tag: 1.11.0
+    tag: 1.13.0
     pullPolicy: IfNotPresent
 
   service:
+    # set type to NodePort if access to web needs access from outside the cluster
+    # for more info see https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
     type: ClusterIP
     port: 8088
     annotations: {}
@@ -350,7 +382,7 @@ elasticsearch:
   replicas: 3
   persistence:
     enabled: false
-  imageTag: 7.10.1
+  imageTag: 7.16.2
   host: elasticsearch-master-headless
   scheme: http
   port: 9200

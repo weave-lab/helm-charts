@@ -27,9 +27,10 @@ spec:
         {{- include "temporal.labels" $ | nindent 8 }}
         app.kubernetes.io/component: database
     spec:
+      {{ include "temporal.serviceAccount" . }}
       restartPolicy: "OnFailure"
       initContainers:
-        {{- if or .Values.cassandra.enabled }}
+        {{- if or .Values.cassandra.enabled (eq (include "temporal.persistence.driver" (list $ "default")) "cassandra") (eq (include "temporal.persistence.driver" (list $ "visibility")) "cassandra") }}
         {{- if .Values.cassandra.enabled }}
         - name: check-cassandra-service
           image: busybox
@@ -41,14 +42,12 @@ spec:
         {{- end }}
         {{- range $store := (list "default" "visibility") }}
         {{- $storeConfig := index $.Values.server.config.persistence $store }}
+        {{- if eq (include "temporal.persistence.driver" (list $ $store)) "cassandra" }}
         - name: create-{{ $store }}-store
           image: "{{ $.Values.admintools.image.repository }}:{{ $.Values.admintools.image.tag }}"
           imagePullPolicy: {{ $.Values.admintools.image.pullPolicy }}
-          {{- if eq (include "temporal.persistence.driver" (list $ $store)) "cassandra" }}
           command: ['sh', '-c', 'temporal-cassandra-tool create -k {{ $storeConfig.cassandra.keyspace }} --replication-factor {{ $storeConfig.cassandra.replicationFactor }}']
-          {{- end }}
           env:
-            {{- if eq (include "temporal.persistence.driver" (list $ $store)) "cassandra" }}
             - name: CASSANDRA_HOST
               value: {{ first (splitList "," (include "temporal.persistence.cassandra.hosts" (list $ $store))) }}
             - name: CASSANDRA_PORT
@@ -59,11 +58,18 @@ spec:
             - name: CASSANDRA_USER
               value: {{ $storeConfig.cassandra.user }}
             {{- end }}
-            {{- if $storeConfig.cassandra.password }}
+            {{- if (or $storeConfig.cassandra.password $storeConfig.cassandra.existingSecret) }}
             - name: CASSANDRA_PASSWORD
+              {{- if $storeConfig.cassandra.existingSecret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "temporal.persistence.secretName" (list $ $store) }}
+                  key: {{ include "temporal.persistence.secretKey" (list $ $store) }}
+              {{- else }}
               value: {{ $storeConfig.cassandra.password }}
+              {{- end }}
             {{- end }}
-            {{- end }}
+        {{- end }}
         {{- end }}
         {{- else }}
           []
@@ -87,9 +93,16 @@ spec:
             - name: CASSANDRA_USER
               value: {{ $storeConfig.cassandra.user }}
             {{- end }}
-            {{- if $storeConfig.cassandra.password }}
+            {{- if (or $storeConfig.cassandra.password $storeConfig.cassandra.existingSecret) }}
             - name: CASSANDRA_PASSWORD
+              {{- if $storeConfig.cassandra.existingSecret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "temporal.persistence.secretName" (list $ $store) }}
+                  key: {{ include "temporal.persistence.secretKey" (list $ $store) }}
+              {{- else }}
               value: {{ $storeConfig.cassandra.password }}
+              {{- end }}
             {{- end }}
             {{- end }}
         {{- end }}
@@ -100,7 +113,18 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
+      {{- with (default $.Values.server.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
 ---
 {{- end }}
 {{- if .Values.schema.update.enabled }}
@@ -131,6 +155,7 @@ spec:
         {{- include "temporal.labels" $ | nindent 8 }}
         app.kubernetes.io/component: database
     spec:
+      {{ include "temporal.serviceAccount" . }}
       restartPolicy: "OnFailure"
       initContainers:
         {{- if .Values.cassandra.enabled }}
@@ -165,13 +190,31 @@ spec:
             - name: CASSANDRA_USER
               value: {{ $storeConfig.cassandra.user }}
             {{- end }}
-            {{- if $storeConfig.cassandra.password }}
+            {{- if (or $storeConfig.cassandra.password $storeConfig.cassandra.existingSecret) }}
             - name: CASSANDRA_PASSWORD
+              {{- if $storeConfig.cassandra.existingSecret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "temporal.persistence.secretName" (list $ $store) }}
+                  key: {{ include "temporal.persistence.secretKey" (list $ $store) }}
+              {{- else }}
               value: {{ $storeConfig.cassandra.password }}
+              {{- end }}
             {{- end }}
             {{- end }}
         {{- end }}
-
+      {{- with (default $.Values.admintools.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.admintools.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.admintools.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
 ---
 {{- end }}
 {{- if or $.Values.elasticsearch.enabled $.Values.elasticsearch.external }}
@@ -202,6 +245,7 @@ spec:
         {{- include "temporal.labels" $ | nindent 8 }}
         app.kubernetes.io/component: database
     spec:
+      {{ include "temporal.serviceAccount" . }}
       restartPolicy: "OnFailure"
       initContainers:
         - name: check-elasticsearch-service
@@ -217,7 +261,19 @@ spec:
           imagePullPolicy: {{ $.Values.admintools.image.pullPolicy }}
           command: ['sh', '-c']
           args:
-            - 'curl -X PUT --user {{ .Values.elasticsearch.username }}:{{ .Values.elasticsearch.password }} {{ .Values.elasticsearch.scheme }}://{{ .Values.elasticsearch.host }}:{{ .Values.elasticsearch.port }}/_template/temporal_visibility_v1_template -H "Content-Type: application/json" --data-binary "@schema/elasticsearch/visibility/index_template_{{ .Values.elasticsearch.version }}.json" 2>&1;
-              curl -X PUT --user {{ .Values.elasticsearch.username }}:{{ .Values.elasticsearch.password }} {{ .Values.elasticsearch.scheme }}://{{ .Values.elasticsearch.host }}:{{ .Values.elasticsearch.port }}/{{ .Values.elasticsearch.visibilityIndex }} 2>&1;'
+            - 'curl -X PUT --fail --user {{ .Values.elasticsearch.username }}:{{ .Values.elasticsearch.password }} {{ .Values.elasticsearch.scheme }}://{{ .Values.elasticsearch.host }}:{{ .Values.elasticsearch.port }}/_template/temporal_visibility_v1_template -H "Content-Type: application/json" --data-binary "@schema/elasticsearch/visibility/index_template_{{ .Values.elasticsearch.version }}.json" 2>&1 &&
+              curl -X PUT --fail --user {{ .Values.elasticsearch.username }}:{{ .Values.elasticsearch.password }} {{ .Values.elasticsearch.scheme }}://{{ .Values.elasticsearch.host }}:{{ .Values.elasticsearch.port }}/{{ .Values.elasticsearch.visibilityIndex }} 2>&1'
+      {{- with (default $.Values.admintools.nodeSelector) }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.admintools.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.admintools.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
 {{- end }}
 {{- end }}

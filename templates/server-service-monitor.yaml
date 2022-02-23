@@ -11,13 +11,16 @@ metadata:
     {{- include "temporal.labels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ $service }}
     {{- with (default $.Values.server.metrics.serviceMonitor.additionalLabels $serviceValues.metrics.serviceMonitor.additionalLabels) }}
-    {{- toYaml . | indent 4 }}
+    {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
   endpoints:
   - port: metrics
     interval: {{ default $.Values.server.metrics.serviceMonitor.interval $serviceValues.metrics.serviceMonitor.interval }}
-    metricRelabelings: {{ toYaml (default $.Values.server.metrics.serviceMonitor.metricRelabelings $serviceValues.metrics.serviceMonitor.metricRelabelings) | nindent 4 }}
+    {{- with (default $.Values.server.metrics.serviceMonitor.metricRelabelings $serviceValues.metrics.serviceMonitor.metricRelabelings) }}
+    metricRelabelings:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
   jobLabel: {{ include "temporal.componentname" (list $ $service) }}
   namespaceSelector:
     matchNames:
