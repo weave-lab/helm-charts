@@ -411,17 +411,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Create the name of the service account to use
-*/}}
-{{- define "temporal.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create -}}
-{{- default (include "temporal.fullname" .) .Values.serviceAccount.name -}}
-{{- else -}}
-{{- default "default" .Values.serviceAccount.name }}
-{{- end -}}
-{{- end -}}
-
-{{/*
 Namespace labels
 */}}
 {{- define "temporal.namespaceLabels" -}}

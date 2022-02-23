@@ -38,9 +38,6 @@ spec:
                 - /
               initialDelaySeconds: 5
               periodSeconds: 5
-      {{- with (include "temporal.serviceAccountName" $) }}
-      serviceAccountName: {{ . }}
-      {{- end }}
       {{- with $.Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
